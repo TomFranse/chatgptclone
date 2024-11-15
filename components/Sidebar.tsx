@@ -14,13 +14,20 @@ type Props = {};
 
 function Sidebar({}: Props) {
   const { data: session } = useSession();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const userId = isDevelopment ? 'development-user' : session?.user?.uid;
+
   const [chats, loading] = useCollection(
-    session &&
+    userId ? 
       query(
-        collection(firestore, `users/${session?.user?.uid!}/chats`),
-        orderBy("createdAt", "asc")
+        collection(firestore, `users/${userId}/chats`),
+        orderBy("createdAt", "desc")
       )
+    : null
   );
+
+  console.log('Sidebar - userId:', userId);
+  console.log('Chats found:', chats?.docs.length);
 
   return (
     <div className="p-2 flex flex-col h-screen">
@@ -43,7 +50,7 @@ function Sidebar({}: Props) {
                 viewport={{ once: true }}
                 key={chat.id}
               >
-                <ChatRow id={chat.id} session={session} />
+                <ChatRow id={chat.id} session={session} isDevelopment={isDevelopment} />
               </motion.div>
             ))}
           </div>

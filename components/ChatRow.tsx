@@ -9,32 +9,39 @@ import { useCollection } from "react-firebase-hooks/firestore";
 type Props = {
   id: string;
   session: Session | null;
+  isDevelopment?: boolean;
 };
 
-function ChatRow({ id, session }: Props) {
+function ChatRow({ id, session, isDevelopment }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [active, setActive] = useState(false);
+  const userId = isDevelopment ? 'development-user' : session?.user?.uid;
 
   const [messages] = useCollection(
-    query(
-      collection(
-        firestore,
-        `users/${session?.user?.uid!}/chats/${id}/messages`
-      ),
-      orderBy("createdAt", "asc")
-    )
+    userId ?
+      query(
+        collection(
+          firestore,
+          `users/${userId}/chats/${id}/messages`
+        ),
+        orderBy("createdAt", "asc")
+      )
+    : null
   );
 
   useEffect(() => {
     if (!pathname) return;
-
     setActive(pathname.includes(id));
-  }, [pathname]);
+  }, [pathname, id]);
 
   const removeChat = async () => {
-    await deleteDoc(doc(firestore, `users/${session?.user?.uid!}/chats/${id}`));
-    router.replace("/");
+    try {
+      await deleteDoc(doc(firestore, `users/${userId}/chats/${id}`));
+      router.replace("/");
+    } catch (error) {
+      console.error('Error removing chat:', error);
+    }
   };
 
   return (

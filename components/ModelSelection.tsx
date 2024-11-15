@@ -4,33 +4,58 @@ import React from "react";
 import Select from "react-select";
 import useSWR from "swr";
 
-type Props = {};
+const fetchModels = async () => {
+  try {
+    const res = await fetch("/api/getEngines");
+    if (!res.ok) throw new Error('Failed to fetch models');
+    return res.json();
+  } catch (error) {
+    return { modelOption: [{ value: "gpt-3.5-turbo", label: "GPT-3.5" }] };
+  }
+};
 
-const fetchModels = () => fetch("/api/getEngines").then((res) => res.json());
+function ModelSelection() {
+  interface ModelOption {
+    value: string;
+    label: string;
+  }
 
-function ModelSelection({}: Props) {
-  const { data: models, isLoading } = useSWR("models", fetchModels);
-  const { data: model, mutate: setModel } = useSWR("model", {
-    fallbackData: "text-davinci-003",
+  const [isLoading, setIsLoading] = React.useState(false);
+  const { data: models } = useSWR("models", fetchModels, {
+    fallbackData: { modelOption: [{ value: "gpt-3.5-turbo", label: "GPT-3.5" }] }
   });
-
-  // console.log(models);
+  
+  const { data: model, mutate: setModel } = useSWR("model", {
+    fallbackData: "gpt-3.5-turbo"
+  });
 
   return (
     <div className="mt-2">
-      <Select
-        className="mt-2"
-        options={models?.modelOption}
-        defaultValue={model}
-        placeholder={model}
-        isSearchable
-        isLoading={isLoading}
-        menuPosition="fixed"
-        classNames={{
-          control: (state) => "bg-[#434654] border-[#434654]",
-        }}
-        onChange={(e) => setModel(e.value)}
-      />
+      {isLoading ? (
+        <div className="mt-2 text-white">Loading models...</div>
+      ) : (
+        <Select
+          instanceId="model-select"
+          className="mt-2"
+          options={models?.modelOption}
+          defaultValue={models?.modelOption.find((opt: ModelOption) => opt.value === model)}
+          isSearchable
+          menuPosition="fixed"
+          classNames={{
+            control: () => "bg-[#434654] border-[#434654]"
+          }}
+          onChange={(e) => {
+            setIsLoading(true);
+            setModel(e?.value);
+            setIsLoading(false);
+          }}
+          value={models?.modelOption.find((opt: ModelOption) => opt.value === model)}
+          components={{
+            LoadingIndicator: () => null,
+            IndicatorSeparator: () => null
+          }}
+        />
+      )}
     </div>
   );
 }
