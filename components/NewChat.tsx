@@ -8,6 +8,7 @@ import {
 import { Session } from "next-auth";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { toast } from "react-hot-toast";
 
 type Props = {
   session: Session | null;
@@ -15,30 +16,76 @@ type Props = {
 
 function NewChat({ session }: Props) {
   const router = useRouter();
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   const createNewChat = async () => {
+    console.log('Creating new chat...');
+    console.log('Development mode:', isDevelopment);
+    console.log('Session:', session);
+
     try {
-      if (!session) return;
+      const userId = isDevelopment ? 'development-user' : session?.user?.uid;
+      const userEmail = isDevelopment ? 'dev@example.com' : session?.user?.email;
 
-      const doc = await addDoc(
-        collection(firestore, `users/${session.user.uid}/chats`),
-        {
-          userId: session.user.uid,
-          userEmail: session.user.email,
+      console.log('Using userId:', userId);
+      console.log('Using userEmail:', userEmail);
+
+      if (!isDevelopment && !session) {
+        console.error('No session and not in development mode');
+        toast.error('Authentication required');
+        return;
+      }
+
+      const collectionPath = `users/${userId}/chats`;
+      console.log('Attempting to create document in:', collectionPath);
+
+      try {
+        const collectionRef = collection(firestore, collectionPath);
+        console.log('Collection reference created');
+
+        const docData = {
+          userId: userId,
+          userEmail: userEmail,
           createdAt: serverTimestamp() as Timestamp,
+        };
+        console.log('Document data:', docData);
+
+        const doc = await addDoc(collectionRef, docData);
+        console.log('Document created with ID:', doc.id);
+
+        if (!doc.id) {
+          console.error('Document created but no ID returned');
+          toast.error('Failed to create new chat');
+          return;
         }
-      );
 
-      if (!doc.id) return;
+        const chatPath = `/chat/${doc.id}`;
+        console.log('Navigating to:', chatPath);
+        router.push(chatPath);
+        toast.success('New chat created!');
 
-      router.push(`/chat/${doc.id}`);
+      } catch (firestoreError: any) {
+        console.error('Firestore operation failed:', firestoreError);
+        console.error('Error code:', firestoreError.code);
+        console.error('Error message:', firestoreError.message);
+        toast.error(`Database error: ${firestoreError.message}`);
+      }
+
     } catch (error: any) {
-      console.log(error.message);
+      console.error('Top level error:', error);
+      console.error('Error stack:', error.stack);
+      toast.error('Failed to create new chat');
     }
   };
 
   return (
-    <div className="chatRow border-gray-700 border" onClick={createNewChat}>
+    <div 
+      className="chatRow border-gray-700 border" 
+      onClick={() => {
+        console.log('New Chat button clicked');
+        createNewChat();
+      }}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"

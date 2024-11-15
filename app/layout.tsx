@@ -12,13 +12,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOption);
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
     <html lang="en">
       <head />
       <body>
         <SessionProvider session={session}>
-          {!session ? (
+          {!session && !isDevelopment ? (
             <Login />
           ) : (
             <div className="flex">

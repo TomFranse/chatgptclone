@@ -14,14 +14,21 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const models = await openai.listModels().then((res) => res.data.data);
+  try {
+    const models = await openai.models.list();
 
-  const modelOption = models.map((model) => ({
-    value: model.id,
-    label: model.id,
-  }));
+    const modelOption = models.data.map((model) => ({
+      value: model.id,
+      label: model.id,
+    }));
 
-  res.status(200).json({
-    modelOption,
-  });
+    res.status(200).json({
+      modelOption,
+    });
+  } catch (error) {
+    console.error('Error fetching models:', error);
+    res.status(500).json({
+      modelOption: [{ value: "gpt-3.5-turbo", label: "GPT-3.5" }]
+    });
+  }
 }

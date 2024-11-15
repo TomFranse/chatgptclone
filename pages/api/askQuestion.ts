@@ -24,29 +24,58 @@ export default async function handler(
     return;
   }
 
-  // ChatGpt Query
+  console.log('API Request received:', { prompt, chatId, model });
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('OpenAI Key exists:', !!process.env.OPENAI_API_KEY);
 
-  const response = await query(prompt, chatId, model);
+  try {
+    // ChatGPT Query
+    const response = await query(prompt, chatId, model);
+    console.log('OpenAI Response received');
 
-  const message: Message = {
-    text: response || "ChatGpt unable to answer that!",
-    createdAt: admin.firestore.Timestamp.now(),
-    user: {
-      _id: "ChatGPT",
-      name: "ChatGPT",
-      email: "ChatGPT",
-      avatar:
-        "https://drive.google.com/uc?export=download&id=1ikaBBU-OsBSHkleHQmf15ww0vgX-A0Kz",
-    },
-  };
+    const message: Message = {
+      text: response || "ChatGPT unable to answer that!",
+      createdAt: admin.firestore.Timestamp.now(),
+      user: {
+        _id: "ChatGPT",
+        name: "ChatGPT",
+        email: "ChatGPT",
+        avatar:
+          "https://drive.google.com/uc?export=download&id=1ikaBBU-OsBSHkleHQmf15ww0vgX-A0Kz",
+      },
+    };
 
-  await adminDb
-    .collection("users")
-    .doc(session?.user?.uid)
-    .collection("chats")
-    .doc(chatId)
-    .collection("messages")
-    .add(message);
+    const userId = process.env.NODE_ENV === 'development' ? 
+      'development-user' : 
+      session?.user?.uid;
 
-  res.status(200).json({ answer: message.text });
+    console.log('Using userId:', userId);
+
+    if (!userId) {
+      throw new Error('No user ID available');
+    }
+
+    await adminDb
+      .collection("users")
+      .doc(userId)
+      .collection("chats")
+      .doc(chatId)
+      .collection("messages")
+      .add(message);
+
+    console.log('Message saved to Firestore');
+    res.status(200).json({ answer: message.text });
+    
+  } catch (error: any) {
+    console.error('API Error Details:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
+    res.status(500).json({ 
+      answer: `Error: ${error.response?.data?.error?.message || error.message}` 
+    });
+  }
 }

@@ -17,6 +17,8 @@ function ChatInput({ chatId }: Props) {
   const { data: session } = useSession();
   const [prompt, setPrompt] = useState("");
   const [loading, setIsLoading] = useState(true);
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const userId = isDevelopment ? 'development-user' : session?.user?.uid;
 
   const { data: model } = useSWR("model", {
     fallbackData: "text-davinci-003",
@@ -26,35 +28,33 @@ function ChatInput({ chatId }: Props) {
     e.preventDefault();
 
     try {
-      if (!prompt && !session) return;
+      if (!prompt) return;
 
       const input = prompt.trim();
       setPrompt("");
-
       setIsLoading(false);
 
       const message: Message = {
         text: input,
         createdAt: serverTimestamp(),
         user: {
-          _id: session?.user.uid!,
-          name: session?.user.name!,
-          email: session?.user.email!,
-          avatar:
-            session?.user.image ||
-            `https://ui-avatars.com/api/?name=${session?.user.name!}`,
+          _id: isDevelopment ? 'development-user' : session?.user?.uid!,
+          name: isDevelopment ? 'Development User' : session?.user?.name!,
+          email: isDevelopment ? 'dev@example.com' : session?.user?.email!,
+          avatar: isDevelopment ? 
+            'https://ui-avatars.com/api/?name=Dev+User' : 
+            session?.user?.image || `https://ui-avatars.com/api/?name=${session?.user?.name!}`,
         },
       };
 
       await addDoc(
         collection(
           firestore,
-          `users/${session?.user?.uid!}/chats/${chatId}/messages`
+          `users/${userId}/chats/${chatId}/messages`
         ),
         message
       );
 
-      // loading
       const notification = toast.loading("ChatGPT is thinking...");
 
       await fetch("/api/askQuestion", {
@@ -66,18 +66,23 @@ function ChatInput({ chatId }: Props) {
           prompt: input,
           chatId,
           model,
-          session,
+          session: isDevelopment ? {
+            user: {
+              uid: 'development-user',
+              email: 'dev@example.com',
+              name: 'Development User'
+            }
+          } : session,
         }),
       }).then(() => {
-        // Tost Notification
         toast.success("ChatGPT has responded!", {
           id: notification,
         });
-
         setIsLoading(true);
       });
     } catch (error: any) {
-      console.log(error.message);
+      console.error('Error:', error);
+      toast.error('Failed to send message');
     }
   };
 
@@ -89,7 +94,7 @@ function ChatInput({ chatId }: Props) {
           placeholder="Type your message here..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          disabled={!session}
+          disabled={!isDevelopment && !session}
           className={`bg-transparent focus:outline-none flex-1 disabled:cursor-not-allowed disabled:text-gray-300 ${
             !loading && "animate-pulse"
           }`}
@@ -98,7 +103,7 @@ function ChatInput({ chatId }: Props) {
         {loading ? (
           <button
             type="submit"
-            disabled={!prompt || !session}
+            disabled={!prompt || (!isDevelopment && !session)}
             className="bg-[#11A37F] hover:opacity-50 text-white font-bold px-4 py-2 rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             <svg
@@ -119,7 +124,7 @@ function ChatInput({ chatId }: Props) {
         ) : (
           <button
             type="submit"
-            disabled={!session}
+            disabled={!isDevelopment && !session}
             className="bg-[#11A37F] hover:opacity-50 text-white font-bold px-4 py-2 rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             <svg

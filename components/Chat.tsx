@@ -15,18 +15,20 @@ type Props = {
 function Chat({ chatId }: Props) {
   const { data: session } = useSession();
   const messageEndRef = useRef<null | HTMLDivElement>(null);
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const userId = isDevelopment ? 'development-user' : session?.user?.uid;
 
   const [messages] = useCollection(
-    session &&
+    chatId && userId ? 
       query(
         collection(
           firestore,
-          `users/${session?.user?.uid!}/chats/${chatId}/messages`
+          `users/${userId}/chats/${chatId}/messages`
         ),
         orderBy("createdAt", "asc")
       )
+    : null
   );
-  //console.log("🚀 ~ file: Chat.tsx:27 ~ Chat ~ messages:", messages?.docs);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView();
