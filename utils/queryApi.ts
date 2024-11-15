@@ -22,14 +22,14 @@ const query = async (prompt: string, chatId: string, model: string) => {
     const messages = messagesDocs.docs.map(doc => {
       const message = doc.data();
       return {
-        role: message.user._id === "ChatGPT" ? "assistant" : "user",
+        role: (message.user._id === "ChatGPT" ? "assistant" : "user") as "assistant" | "user",
         content: message.text
       };
     });
 
     // Add the current prompt
     messages.push({
-      role: "user",
+      role: "user" as "user",
       content: prompt
     });
 
