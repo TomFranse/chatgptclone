@@ -3,7 +3,7 @@
 import { firestore } from "@/firebase/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useSession } from "next-auth/react";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { toast } from "react-hot-toast";
 import useSWR from "swr";
 
@@ -17,11 +17,13 @@ function ChatInput({ chatId }: Props) {
   const { data: session } = useSession();
   const [prompt, setPrompt] = useState("");
   const [loading, setIsLoading] = useState(true);
+  const [streamingText, setStreamingText] = useState("");
   const isDevelopment = process.env.NODE_ENV === 'development';
   const userId = isDevelopment ? 'development-user' : session?.user?.uid;
+  const messageRef = useRef<HTMLDivElement>(null);
 
   const { data: model } = useSWR("model", {
-    fallbackData: "text-davinci-003",
+    fallbackData: "gpt-4",
   });
 
   const generateResponse = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,6 +35,7 @@ function ChatInput({ chatId }: Props) {
       const input = prompt.trim();
       setPrompt("");
       setIsLoading(false);
+      setStreamingText("");
 
       const message: Message = {
         text: input,
@@ -57,7 +60,7 @@ function ChatInput({ chatId }: Props) {
 
       const notification = toast.loading("ChatGPT is thinking...");
 
-      await fetch("/api/askQuestion", {
+      const response = await fetch("/api/askQuestion", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,12 +77,41 @@ function ChatInput({ chatId }: Props) {
             }
           } : session,
         }),
-      }).then(() => {
-        toast.success("ChatGPT has responded!", {
-          id: notification,
-        });
-        setIsLoading(true);
       });
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              toast.success("ChatGPT has responded!", {
+                id: notification,
+              });
+              setIsLoading(true);
+              continue;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                setStreamingText(prev => prev + parsed.content);
+              }
+            } catch (error) {
+              console.error('Error parsing streaming data:', error);
+            }
+          }
+        }
+      }
+
     } catch (error: any) {
       console.error('Error:', error);
       toast.error('Failed to send message');
@@ -144,6 +176,11 @@ function ChatInput({ chatId }: Props) {
           </button>
         )}
       </form>
+      {streamingText && (
+        <div ref={messageRef} className="streaming-message">
+          {streamingText}
+        </div>
+      )}
       <div className="md:hidden">
         <ModelSelection />
       </div>

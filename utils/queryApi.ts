@@ -33,38 +33,28 @@ const query = async (prompt: string, chatId: string, model: string) => {
       content: prompt
     });
 
-    console.log('Making OpenAI request with:', { model, messages });
+    console.log('Making OpenAI streaming request with:', { model, messages });
 
     const response = await openai.chat.completions.create({
       model: model,
       messages: messages,
-      temperature: 0.9,
-      max_tokens: 1000,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0,
+      temperature: 0.7,
+      stream: true, // Enable streaming
     });
 
-    if (!response.choices[0].message?.content) {
-      throw new Error('No response from OpenAI');
+    let fullContent = '';
+    
+    for await (const chunk of response) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      console.log('Received chunk:', content);
+      fullContent += content;
     }
 
-    console.log('OpenAI response received:', response.choices[0].message.content);
-    return response.choices[0].message.content;
+    console.log('Stream complete. Full content:', fullContent);
+    return fullContent;
 
   } catch (error: any) {
     console.error('OpenAI API Error:', error.response?.data || error.message);
-    
-    if (error.response?.status === 401) {
-      throw new Error('Invalid OpenAI API key');
-    }
-    if (error.response?.status === 429) {
-      throw new Error('OpenAI API rate limit exceeded');
-    }
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured in environment');
-    }
-    
     throw error;
   }
 };
