@@ -3,7 +3,7 @@
 import { firestore } from "@/firebase/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useSession } from "next-auth/react";
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import useSWR from "swr";
 
@@ -11,16 +11,16 @@ import ModelSelection from "./ModelSelection";
 
 type Props = {
   chatId: string;
+  onStreamingUpdate?: (content: string) => void;
 };
 
-function ChatInput({ chatId }: Props) {
+function ChatInput({ chatId, onStreamingUpdate }: Props) {
   const { data: session } = useSession();
   const [prompt, setPrompt] = useState("");
   const [loading, setIsLoading] = useState(true);
   const [streamingText, setStreamingText] = useState("");
   const isDevelopment = process.env.NODE_ENV === 'development';
   const userId = isDevelopment ? 'development-user' : session?.user?.uid;
-  const messageRef = useRef<HTMLDivElement>(null);
 
   const { data: model } = useSWR("model", {
     fallbackData: "gpt-4",
@@ -36,6 +36,7 @@ function ChatInput({ chatId }: Props) {
       setPrompt("");
       setIsLoading(false);
       setStreamingText("");
+      onStreamingUpdate?.("");
 
       const message: Message = {
         text: input,
@@ -80,7 +81,10 @@ function ChatInput({ chatId }: Props) {
       });
 
       const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
+      
       const decoder = new TextDecoder();
+      let currentText = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -97,13 +101,17 @@ function ChatInput({ chatId }: Props) {
                 id: notification,
               });
               setIsLoading(true);
+              setStreamingText("");
+              onStreamingUpdate?.("");
               continue;
             }
 
             try {
               const parsed = JSON.parse(data);
               if (parsed.content) {
-                setStreamingText(prev => prev + parsed.content);
+                currentText += parsed.content;
+                setStreamingText(currentText);
+                onStreamingUpdate?.(currentText);
               }
             } catch (error) {
               console.error('Error parsing streaming data:', error);
@@ -176,11 +184,6 @@ function ChatInput({ chatId }: Props) {
           </button>
         )}
       </form>
-      {streamingText && (
-        <div ref={messageRef} className="streaming-message">
-          {streamingText}
-        </div>
-      )}
       <div className="md:hidden">
         <ModelSelection />
       </div>

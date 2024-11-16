@@ -7,23 +7,22 @@ import React from "react";
 type Props = {
   message: DocumentData;
   isStreaming?: boolean;
-  streamingContent?: string;
 };
 
-function Message({ message, isStreaming, streamingContent }: Props) {
+function Message({ message, isStreaming }: Props) {
   const isChatGPT = message.user.name === "ChatGPT";
-  const displayText = isStreaming ? streamingContent : message.text;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
       className={`py-5 text-white ${isChatGPT && "bg-[#434654]"}`}
     >
       <div className="flex space-x-5 px-10 max-w-2xl mx-auto">
         <img src={message.user.avatar} alt="" className="h-8 w-8" />
-        <p className="pt-1 text-sm">{displayText}</p>
+        <p className="pt-1 text-sm">{message.text}</p>
       </div>
     </motion.div>
   );

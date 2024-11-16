@@ -10,9 +10,10 @@ import Message from "./Message";
 
 type Props = {
   chatId: string;
+  streamingContent: string;
 };
 
-function Chat({ chatId }: Props) {
+function Chat({ chatId, streamingContent }: Props) {
   const { data: session } = useSession();
   const messageEndRef = useRef<null | HTMLDivElement>(null);
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -31,8 +32,12 @@ function Chat({ chatId }: Props) {
   );
 
   useEffect(() => {
-    messageEndRef.current?.scrollIntoView();
-  }, [messages]);
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingContent]);
+
+  // Get the last message from the database
+  const lastMessage = messages?.docs[messages.docs.length - 1]?.data();
+  const isLastMessageFromAssistant = lastMessage?.user.name === "ChatGPT";
 
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -57,9 +62,31 @@ function Chat({ chatId }: Props) {
           </svg>
         </>
       )}
-      {messages?.docs.map((message) => (
-        <Message key={message.id} message={message.data()} />
-      ))}
+      {messages?.docs.map((message, index) => {
+        const isLastAssistantMessage = index === messages.docs.length - 1 && 
+          message.data().user.name === "ChatGPT" && 
+          streamingContent;
+
+        // Skip rendering the last assistant message if we're streaming
+        if (isLastAssistantMessage) return null;
+
+        return <Message key={message.id} message={message.data()} />;
+      })}
+      {streamingContent && (
+        <Message 
+          key="streaming"
+          message={{
+            text: streamingContent,
+            user: {
+              _id: "ChatGPT",
+              name: "ChatGPT",
+              email: "ChatGPT",
+              avatar: "https://drive.google.com/uc?export=download&id=1ikaBBU-OsBSHkleHQmf15ww0vgX-A0Kz",
+            }
+          }}
+          isStreaming={true}
+        />
+      )}
       <div ref={messageEndRef} />
     </div>
   );

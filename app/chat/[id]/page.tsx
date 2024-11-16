@@ -3,7 +3,7 @@
 import Chat from "@/components/Chat";
 import ChatInput from "@/components/ChatInput";
 import { motion } from "framer-motion";
-import React from "react";
+import { useState } from "react";
 
 type Props = {
   params: {
@@ -12,6 +12,8 @@ type Props = {
 };
 
 function ChatPage({ params: { id } }: Props) {
+  const [streamingContent, setStreamingContent] = useState("");
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -19,8 +21,11 @@ function ChatPage({ params: { id } }: Props) {
       viewport={{ once: true }}
       className="flex flex-col h-screen overflow-hidden"
     >
-      <Chat chatId={id} />
-      <ChatInput chatId={id} />
+      <Chat chatId={id} streamingContent={streamingContent} />
+      <ChatInput 
+        chatId={id} 
+        onStreamingUpdate={setStreamingContent}
+      />
     </motion.div>
   );
 }
