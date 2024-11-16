@@ -35,8 +35,8 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
       const input = prompt.trim();
       setPrompt("");
       setIsLoading(false);
-      setStreamingText("");
-      onStreamingUpdate?.("");
+      
+      console.log('Starting new chat response...');
 
       const message: Message = {
         text: input,
@@ -80,6 +80,8 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
         }),
       });
 
+      console.log('Got initial response from API');
+      
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No reader available');
       
@@ -88,21 +90,26 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log('Stream complete. Final length:', currentText.length);
+          break;
+        }
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        console.log('Raw chunk received:', chunk);
         
+        const lines = chunk.split('\n');
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
+            console.log('Processing data:', data);
+            
             if (data === '[DONE]') {
+              console.log('Received DONE signal');
               toast.success("ChatGPT has responded!", {
                 id: notification,
               });
               setIsLoading(true);
-              setStreamingText("");
-              onStreamingUpdate?.("");
               continue;
             }
 
@@ -110,7 +117,7 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
               const parsed = JSON.parse(data);
               if (parsed.content) {
                 currentText += parsed.content;
-                setStreamingText(currentText);
+                console.log('Updated streaming text:', currentText);
                 onStreamingUpdate?.(currentText);
               }
             } catch (error) {

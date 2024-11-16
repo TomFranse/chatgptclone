@@ -14,15 +14,18 @@ function Message({ message, isStreaming }: Props) {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
       className={`py-5 text-white ${isChatGPT && "bg-[#434654]"}`}
+      style={{ minHeight: '3.5rem' }}
     >
       <div className="flex space-x-5 px-10 max-w-2xl mx-auto">
-        <img src={message.user.avatar} alt="" className="h-8 w-8" />
-        <p className="pt-1 text-sm">{message.text}</p>
+        <div className="flex-shrink-0 w-8">
+          <img src={message.user.avatar} alt="" className="h-8 w-8" style={{ opacity: 1 }} />
+        </div>
+        <div className="flex-1 pt-1">
+          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+        </div>
       </div>
     </motion.div>
   );

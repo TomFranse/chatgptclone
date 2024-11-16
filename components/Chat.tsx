@@ -5,7 +5,6 @@ import { collection, orderBy, query } from "firebase/firestore";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
-
 import Message from "./Message";
 
 type Props = {
@@ -35,10 +34,6 @@ function Chat({ chatId, streamingContent }: Props) {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
 
-  // Get the last message from the database
-  const lastMessage = messages?.docs[messages.docs.length - 1]?.data();
-  const isLastMessageFromAssistant = lastMessage?.user.name === "ChatGPT";
-
   return (
     <div className="flex-1 overflow-y-auto overflow-x-hidden">
       {messages?.empty && (
@@ -67,7 +62,6 @@ function Chat({ chatId, streamingContent }: Props) {
           message.data().user.name === "ChatGPT" && 
           streamingContent;
 
-        // Skip rendering the last assistant message if we're streaming
         if (isLastAssistantMessage) return null;
 
         return <Message key={message.id} message={message.data()} />;
