@@ -10,13 +10,15 @@ import Message from "./Message";
 type Props = {
   chatId: string;
   streamingContent: string;
+  onStreamingUpdate: (content: string) => void;
 };
 
-function Chat({ chatId, streamingContent }: Props) {
+function Chat({ chatId, streamingContent, onStreamingUpdate }: Props) {
   const { data: session } = useSession();
   const messageEndRef = useRef<null | HTMLDivElement>(null);
   const isDevelopment = process.env.NODE_ENV === 'development';
   const userId = isDevelopment ? 'development-user' : session?.user?.uid;
+  const prevMessagesLengthRef = useRef(0);
 
   const [messages] = useCollection(
     chatId && userId ? 
@@ -29,6 +31,16 @@ function Chat({ chatId, streamingContent }: Props) {
       )
     : null
   );
+
+  // Clear streaming content when messages change
+  useEffect(() => {
+    const currentLength = messages?.docs.length || 0;
+    if (currentLength > prevMessagesLengthRef.current) {
+      // Messages increased, clear streaming content
+      onStreamingUpdate("");
+    }
+    prevMessagesLengthRef.current = currentLength;
+  }, [messages, onStreamingUpdate]);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });

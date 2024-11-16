@@ -21,7 +21,11 @@ function ChatPage({ params: { id } }: Props) {
       viewport={{ once: true }}
       className="flex flex-col h-screen overflow-hidden"
     >
-      <Chat chatId={id} streamingContent={streamingContent} />
+      <Chat 
+        chatId={id} 
+        streamingContent={streamingContent} 
+        onStreamingUpdate={setStreamingContent}
+      />
       <ChatInput 
         chatId={id} 
         onStreamingUpdate={setStreamingContent}

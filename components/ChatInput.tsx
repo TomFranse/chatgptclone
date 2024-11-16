@@ -36,6 +36,7 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
       setPrompt("");
       setIsLoading(false);
       
+      onStreamingUpdate?.("");
       console.log('Starting new chat response...');
 
       const message: Message = {
