@@ -4,6 +4,7 @@ import query from "@/utils/queryApi";
 import admin from "firebase-admin";
 import type { NextApiRequest, NextApiResponse } from "next";
 import openai from "@/utils/chatgpt";
+import { getModelConfig, DEFAULT_MODEL } from '@/config/modelConfig';
 
 type Data = {
   answer: string;
@@ -25,9 +26,10 @@ export default async function handler(
     return;
   }
 
-  console.log('API Request received:', { prompt, chatId, model });
-
   try {
+    const modelConfig = getModelConfig(model || DEFAULT_MODEL);
+    console.log('API Request received:', { prompt, chatId, model: modelConfig.value });
+
     // Set up streaming headers
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -35,19 +37,18 @@ export default async function handler(
       'Connection': 'keep-alive',
     });
 
-    // Get the streaming response
     const response = await openai.chat.completions.create({
-      model: model || 'gpt-4',
+      model: modelConfig.value,
       messages: [{ role: 'user', content: prompt }],
+      ...modelConfig.defaultParams,
       stream: true,
     });
 
     let fullContent = '';
 
-    for await (const chunk of response) {
+    for await (const chunk of response as any) {
       const content = chunk.choices[0]?.delta?.content || '';
       if (content) {
-        // Send chunk to client
         res.write(`data: ${JSON.stringify({ content })}\n\n`);
         fullContent += content;
       }
@@ -85,11 +86,16 @@ export default async function handler(
       .add(message);
 
     res.end();
+    return;
     
   } catch (error: any) {
     console.error('API Error Details:', error);
-    res.status(500).json({ 
-      answer: `Error: ${error.message}` 
-    });
+    
+    // Only send error response if headers haven't been sent
+    if (!res.writableEnded) {
+      res.status(500).json({ 
+        answer: `Error: ${error.message}` 
+      });
+    }
   }
 }

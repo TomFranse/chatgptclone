@@ -1,7 +1,6 @@
 interface Message {
   text: string;
-
-  createdAt: admin.firestore.Timestamp;
+  createdAt: any;
   user: {
     _id: string;
     name: string;

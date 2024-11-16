@@ -1,0 +1,33 @@
+﻿Design guide
+Color use:
+Twilight style (main)
+   * Gradient top right: E6196B
+   * Gradient center: CF13B3
+   * Gradient bottom left: 8D0BD1
+Fresh style (unused)
+   * Gradient top right: 19E694
+   * Gradient center: 19E6DA
+   * Gradient bottom left: 19ABE6
+General colouring
+   * Body text light background: 616166
+   * Body text Dark background: A6A6A8
+   * Black: 070614
+   * White: FFFFFF
+   * Off White: F5F5F7
+
+
+Typographics
+Bij TMI gebruiken we als standaard font Montserrat. De grote volgt de golden ratio (1.618x)
+
+
+Icons
+Bij TMI werken we met de icon-library van Font Awesome. Deze library biedt duizenden soorten icoontjes en is vrijwel de meest complete library beschikbaar.
+
+
+We hebben een Pro account in LastPass om direct op de site de icons te kunnen downloaden. Hieronder kan je de gehele library in één keer downloaden
+Pills
+Stijlelementen die kleur en textuur geven aan de achtergrond van een product. Deze staan altijd in een 45 graden hoek. Buttons zijn uitzonderingen. Dat zijn altijd horizontale pillen.
+
+
+White space
+Om tekst moet ademruimte heen zitten. We gebruiken een standaard padding van 8, 16 of bij voorkeur 32 of 64 pixels, afhankelijk van scaling en hiërarchie.

@@ -1,10 +1,11 @@
 "use client";
 
-import { firestore } from "@/firebase/firebase";
-import { collection, orderBy, query } from "firebase/firestore";
-import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
+import { collection, orderBy, query } from "firebase/firestore";
+import { firestore } from "@/firebase/firebase";
+import { useSession } from "next-auth/react";
+import { Box, CircularProgress, Typography } from '@mui/material';
 import Message from "./Message";
 
 type Props = {
@@ -13,88 +14,86 @@ type Props = {
   onStreamingUpdate: (content: string) => void;
 };
 
-function Chat({ chatId, streamingContent, onStreamingUpdate }: Props) {
+function Chat({ chatId, streamingContent }: Props) {
   const { data: session } = useSession();
-  const messageEndRef = useRef<null | HTMLDivElement>(null);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const isDevelopment = process.env.NODE_ENV === 'development';
   const userId = isDevelopment ? 'development-user' : session?.user?.uid;
-  const prevMessagesLengthRef = useRef(0);
 
-  const [messages] = useCollection(
-    chatId && userId ? 
+  const [messages, loading] = useCollection(
+    userId ?
       query(
         collection(
           firestore,
-          `users/${userId}/chats/${chatId}/messages`
+          "users",
+          userId,
+          "chats",
+          chatId,
+          "messages"
         ),
         orderBy("createdAt", "asc")
       )
     : null
   );
 
-  // Clear streaming content when messages change
   useEffect(() => {
-    const currentLength = messages?.docs.length || 0;
-    if (currentLength > prevMessagesLengthRef.current) {
-      // Messages increased, clear streaming content
-      onStreamingUpdate("");
-    }
-    prevMessagesLengthRef.current = currentLength;
-  }, [messages, onStreamingUpdate]);
-
-  useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
+  // Get the last message from the database
+  const lastMessage = messages?.docs[messages?.docs.length - 1]?.data();
+  const isLastMessageFromAssistant = lastMessage?.user.name === "ChatGPT";
+
   return (
-    <div className="flex-1 overflow-y-auto overflow-x-hidden">
-      {messages?.empty && (
-        <>
-          <p className="mt-10 text-center text-white">
-            Type a prompt in below to get started
-          </p>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-10 h-10 mx-auto mt-5 text-white animate-bounce"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12.75l3 3m0 0l3-3m-3 3v-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </>
+    <Box sx={{ 
+      flexGrow: 1,
+      overflow: 'auto',
+      position: 'relative'
+    }}>
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+          <CircularProgress />
+        </Box>
       )}
+
+      {messages?.empty && (
+        <Box sx={{ textAlign: 'center', p: 2 }}>
+          <Typography>Type a prompt below to get started!</Typography>
+        </Box>
+      )}
+
       {messages?.docs.map((message, index) => {
-        const isLastAssistantMessage = index === messages.docs.length - 1 && 
-          message.data().user.name === "ChatGPT" && 
-          streamingContent;
+        const messageData = message.data();
+        const isLastChatGPTMessage = 
+          messageData.user.name === "ChatGPT" && 
+          index === messages.docs.length - 1;
 
-        if (isLastAssistantMessage) return null;
+        // Skip the last ChatGPT message if we're streaming
+        if (isLastChatGPTMessage && streamingContent) {
+          return null;
+        }
 
-        return <Message key={message.id} message={message.data()} />;
+        return <Message key={message.id} message={messageData} />;
       })}
+
       {streamingContent && (
-        <Message 
-          key="streaming"
+        <Message
           message={{
             text: streamingContent,
+            createdAt: null,
             user: {
               _id: "ChatGPT",
               name: "ChatGPT",
-              email: "ChatGPT",
-              avatar: "https://drive.google.com/uc?export=download&id=1ikaBBU-OsBSHkleHQmf15ww0vgX-A0Kz",
-            }
+              email: "",
+              avatar: "https://links.papareact.com/89k",
+            },
           }}
-          isStreaming={true}
+          isStreaming
         />
       )}
-      <div ref={messageEndRef} />
-    </div>
+
+      <div ref={messagesEndRef} />
+    </Box>
   );
 }
 

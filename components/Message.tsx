@@ -1,8 +1,7 @@
 "use client";
 
 import { DocumentData } from "firebase/firestore";
-import { motion } from "framer-motion";
-import React from "react";
+import { Paper, Box, Avatar, Typography } from '@mui/material';
 
 type Props = {
   message: DocumentData;
@@ -12,22 +11,63 @@ type Props = {
 function Message({ message, isStreaming }: Props) {
   const isChatGPT = message.user.name === "ChatGPT";
 
+  // Function to format the message text
+  const formatMessage = (text: string) => {
+    // If it's a ChatGPT response, preserve whitespace and line breaks
+    if (isChatGPT) {
+      return text.split('\n').map((line, i) => (
+        <span key={i}>
+          {line}
+          <br />
+        </span>
+      ));
+    }
+    // For user messages, just return the text
+    return text;
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
-      className={`py-5 text-white ${isChatGPT && "bg-[#434654]"}`}
-      style={{ minHeight: '3.5rem' }}
+    <Paper 
+      elevation={0}
+      square
+      sx={{
+        py: 2.5,
+        minHeight: '3.5rem',
+        bgcolor: isChatGPT ? 'action.hover' : 'background.default',
+        whiteSpace: 'pre-wrap'
+      }}
     >
-      <div className="flex space-x-5 px-10 max-w-2xl mx-auto">
-        <div className="flex-shrink-0 w-8">
-          <img src={message.user.avatar} alt="" className="h-8 w-8" style={{ opacity: 1 }} />
-        </div>
-        <div className="flex-1 pt-1">
-          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-        </div>
-      </div>
-    </motion.div>
+      <Box 
+        sx={{ 
+          display: 'flex',
+          gap: 2.5,
+          px: 5,
+          maxWidth: '2xl',
+          mx: 'auto'
+        }}
+      >
+        <Avatar
+          src={message.user.avatar}
+          alt={message.user.name}
+          sx={{ width: 32, height: 32 }}
+        />
+        <Typography 
+          component="div"
+          sx={{
+            pt: 0.5,
+            fontSize: '0.875rem',
+            fontFamily: isChatGPT ? 'monospace' : 'inherit',
+            '& code': {
+              backgroundColor: 'action.hover',
+              padding: '2px 4px',
+              borderRadius: 1,
+            }
+          }}
+        >
+          {formatMessage(message.text)}
+        </Typography>
+      </Box>
+    </Paper>
   );
 }
 

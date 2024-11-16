@@ -32,6 +32,7 @@ export default async function handler(
         label: model.id,
       }));
 
+    console.log('Available models:', modelOption);
     return res.status(200).json({ modelOption });
     
   } catch (error: any) {

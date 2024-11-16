@@ -2,93 +2,57 @@
 
 import { firestore } from "@/firebase/firebase";
 import { collection, orderBy, query } from "firebase/firestore";
-import { motion } from "framer-motion";
-import { signOut, useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useCollection } from "react-firebase-hooks/firestore";
-
+import { Box, List, ListItem, Button, Divider } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import ChatRow from "./ChatRow";
 import ModelSelection from "./ModelSelection";
 import NewChat from "./NewChat";
 
-type Props = {};
-
-function Sidebar({}: Props) {
+function Sidebar() {
   const { data: session } = useSession();
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const userId = isDevelopment ? 'development-user' : session?.user?.uid;
 
-  const [chats, loading] = useCollection(
-    userId ? 
-      query(
-        collection(firestore, `users/${userId}/chats`),
-        orderBy("createdAt", "desc")
-      )
-    : null
+  const [chats, loading, error] = useCollection(
+    session && query(
+      collection(firestore, 'users', session.user?.email!, 'chats'),
+      orderBy('createdAt', 'asc')
+    )
   );
 
-  console.log('Sidebar - userId:', userId);
-  console.log('Chats found:', chats?.docs.length);
-
   return (
-    <div className="p-2 flex flex-col h-screen">
-      <div className="flex-1">
-        <div>
-          <NewChat session={session} />
-          <div className="hidden sm:inline">
-            <ModelSelection />
-          </div>
-          <div className="flex flex-col space-y-2 my-2">
-            {loading && (
-              <div className="animate-pulse text-center text-white">
-                <p>Loading Chats...</p>
-              </div>
-            )}
-            {chats?.docs.map((chat) => (
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                key={chat.id}
-              >
-                <ChatRow id={chat.id} session={session} isDevelopment={isDevelopment} />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <Box sx={{ height: '100vh', overflow: 'auto' }}>
+      <Box sx={{ p: 2 }}>
+        <NewChat />
+        <Divider sx={{ my: 2 }} />
+        <ModelSelection />
+      </Box>
+
+      <List sx={{ px: 2, mt: 2 }}>
+        {loading && (
+          <ListItem>
+            <Box>Loading Chats...</Box>
+          </ListItem>
+        )}
+
+        {chats?.docs.map(chat => (
+          <ChatRow key={chat.id} id={chat.id} />
+        ))}
+      </List>
+
       {session && (
-        <div className="border-t border-white py-4 space-y-4">
-          <div className="chatRow items-center justify-start bg-gray-700/50 gap-5">
-            <img
-              src={session?.user?.image!}
-              alt={session.user.name!}
-              className="h-6 w-6 rounded-full cursor-pointer hover:opacity-50"
-            />
-            <p>{session.user.name}</p>
-          </div>
-          <div
-            className="chatRow items-center justify-start bg-gray-700/50 gap-5"
+        <Box sx={{ p: 2, mt: 'auto' }}>
+          <Button
             onClick={() => signOut()}
+            fullWidth
+            variant="outlined"
+            startIcon={<LogoutIcon />}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
-              />
-            </svg>
-            <p>Log out</p>
-          </div>
-        </div>
+            Log out
+          </Button>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
 

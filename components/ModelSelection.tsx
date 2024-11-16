@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import Select from "react-select";
 import useSWR from "swr";
+import { DEFAULT_MODEL } from '@/config/modelConfig';
+import { FormControl, Select, MenuItem, CircularProgress, Box } from '@mui/material';
 
 const fetchModels = async () => {
   try {
@@ -10,53 +11,54 @@ const fetchModels = async () => {
     if (!res.ok) throw new Error('Failed to fetch models');
     return res.json();
   } catch (error) {
-    return { modelOption: [{ value: "gpt-3.5-turbo", label: "GPT-3.5" }] };
+    return { modelOption: [{ value: DEFAULT_MODEL, label: "GPT-4" }] };
   }
 };
 
 function ModelSelection() {
-  interface ModelOption {
-    value: string;
-    label: string;
-  }
-
   const [isLoading, setIsLoading] = React.useState(false);
   const { data: models } = useSWR("models", fetchModels, {
-    fallbackData: { modelOption: [{ value: "gpt-3.5-turbo", label: "GPT-3.5" }] }
+    fallbackData: { modelOption: [{ value: DEFAULT_MODEL, label: "GPT-4" }] }
   });
   
   const { data: model, mutate: setModel } = useSWR("model", {
-    fallbackData: "gpt-3.5-turbo"
+    fallbackData: DEFAULT_MODEL
   });
 
+  const handleChange = (event: any) => {
+    setIsLoading(true);
+    setModel(event.target.value);
+    console.log('Model selected:', event.target.value);
+    setIsLoading(false);
+  };
+
   return (
-    <div className="mt-2">
+    <Box sx={{ mt: 2 }}>
       {isLoading ? (
-        <div className="mt-2 text-white">Loading models...</div>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <CircularProgress size={24} />
+        </Box>
       ) : (
-        <Select
-          instanceId="model-select"
-          className="mt-2"
-          options={models?.modelOption}
-          defaultValue={models?.modelOption.find((opt: ModelOption) => opt.value === model)}
-          isSearchable
-          menuPosition="fixed"
-          classNames={{
-            control: () => "bg-[#434654] border-[#434654]"
-          }}
-          onChange={(e) => {
-            setIsLoading(true);
-            setModel(e?.value);
-            setIsLoading(false);
-          }}
-          value={models?.modelOption.find((opt: ModelOption) => opt.value === model)}
-          components={{
-            LoadingIndicator: () => null,
-            IndicatorSeparator: () => null
-          }}
-        />
+        <FormControl fullWidth>
+          <Select
+            value={model}
+            onChange={handleChange}
+            sx={{
+              bgcolor: 'background.paper',
+              '& .MuiSelect-select': {
+                py: 1.5,
+              }
+            }}
+          >
+            {models?.modelOption.map((option: { value: string; label: string }) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       )}
-    </div>
+    </Box>
   );
 }
 
