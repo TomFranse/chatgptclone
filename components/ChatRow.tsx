@@ -19,9 +19,13 @@ function ChatRow({ id }: Props) {
   const router = useRouter();
   const { data: session } = useSession();
   const [active, setActive] = useState(false);
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
 
   const [messages] = useCollection(
-    collection(firestore, 'users', session?.user?.email!, 'chats', id, 'messages')
+    userEmail ?
+      collection(firestore, 'users', userEmail, 'chats', id, 'messages')
+      : null
   );
 
   useEffect(() => {
@@ -30,9 +34,13 @@ function ChatRow({ id }: Props) {
   }, [pathname, id]);
 
   const removeChat = async () => {
-    await deleteDoc(doc(firestore, 'users', session?.user?.email!, 'chats', id));
+    if (!userEmail) return;
+    await deleteDoc(doc(firestore, 'users', userEmail, 'chats', id));
     router.replace('/');
   };
+
+  const lastMessage = messages?.docs[messages?.docs.length - 1]?.data().text || "New Chat";
+  const truncatedMessage = lastMessage.length > 30 ? `${lastMessage.substring(0, 30)}...` : lastMessage;
 
   return (
     <ListItem
@@ -51,7 +59,7 @@ function ChatRow({ id }: Props) {
           <ChatIcon />
         </ListItemIcon>
         <ListItemText 
-          primary={messages?.docs[messages.docs.length - 1]?.data().text || "New Chat"}
+          primary={truncatedMessage}
           sx={{ 
             overflow: 'hidden',
             textOverflow: 'ellipsis',

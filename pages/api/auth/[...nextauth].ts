@@ -12,6 +12,20 @@ export const authOptions: AuthOptions = {
   ],
   adapter: FirestoreAdapter(adminDb),
   secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    session: async ({ session, token }) => {
+      if (session?.user) {
+        session.user.uid = token.sub!;
+      }
+      return session;
+    },
+    jwt: async ({ user, token }) => {
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
+    },
+  },
   session: {
     strategy: 'jwt'
   },

@@ -12,11 +12,13 @@ import NewChat from "./NewChat";
 
 function Sidebar() {
   const { data: session } = useSession();
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
 
   const [chats, loading, error] = useCollection(
-    session && query(
-      collection(firestore, 'users', session.user?.email!, 'chats'),
-      orderBy('createdAt', 'asc')
+    userEmail && query(
+      collection(firestore, 'users', userEmail, 'chats'),
+      orderBy('createdAt', 'desc')
     )
   );
 
@@ -32,6 +34,12 @@ function Sidebar() {
         {loading && (
           <ListItem>
             <Box>Loading Chats...</Box>
+          </ListItem>
+        )}
+
+        {error && (
+          <ListItem>
+            <Box>Error loading chats</Box>
           </ListItem>
         )}
 

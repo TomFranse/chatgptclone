@@ -18,15 +18,15 @@ function Chat({ chatId, streamingContent }: Props) {
   const { data: session } = useSession();
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const userId = isDevelopment ? 'development-user' : session?.user?.uid;
+  const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
 
   const [messages, loading] = useCollection(
-    userId ?
+    userEmail ?
       query(
         collection(
           firestore,
           "users",
-          userId,
+          userEmail,
           "chats",
           chatId,
           "messages"
@@ -40,7 +40,6 @@ function Chat({ chatId, streamingContent }: Props) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  // Get the last message from the database
   const lastMessage = messages?.docs[messages?.docs.length - 1]?.data();
   const isLastMessageFromAssistant = lastMessage?.user.name === "ChatGPT";
 
@@ -68,7 +67,6 @@ function Chat({ chatId, streamingContent }: Props) {
           messageData.user.name === "ChatGPT" && 
           index === messages.docs.length - 1;
 
-        // Skip the last ChatGPT message if we're streaming
         if (isLastChatGPTMessage && streamingContent) {
           return null;
         }
