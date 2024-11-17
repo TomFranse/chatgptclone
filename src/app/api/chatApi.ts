@@ -1,6 +1,6 @@
 import { createParser } from 'eventsource-parser';
-import { StreamingRateLimit } from '../utils/streamingRateLimit';
-import { ResponseHandler } from '../utils/responseHandler';
+import { StreamingRateLimit } from '../../utils/streamingRateLimit';
+import { ResponseHandler } from '../../utils/responseHandler';
 
 interface ChatApiConfig {
   apiKey: string;

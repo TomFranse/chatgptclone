@@ -1,9 +1,15 @@
 import { getServerSession } from "next-auth";
 import Login from "@/components/Login";
 import SessionProvider from "@/components/SessionProvider";
-import { authOptions } from "../../pages/api/auth/[...nextauth]";
+import { authOptions } from "./api/auth/authOptions";
 import Providers from "@/components/Providers";
 import RootLayoutClient from "@/components/RootLayoutClient";
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'ChatGPT Messenger',
+  description: 'ChatGPT Clone',
+}
 
 export default async function RootLayout({
   children,
@@ -15,7 +21,6 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <head />
       <body>
         <Providers>
           <SessionProvider session={session}>

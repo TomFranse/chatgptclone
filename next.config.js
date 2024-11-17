@@ -4,8 +4,10 @@ const nextConfig = {
   images: {
     domains: ["drive.google.com"],
   },
-  experimental: {
-    appDir: true,
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
   },
 };
 

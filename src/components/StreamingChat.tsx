@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useStreamManager } from '../hooks/useStreamManager';
-import { ChatAPI } from '../api/chatApi';
+import { ChatAPI } from '../app/api/chatApi';
 import { ResponseHandler } from '../utils/responseHandler';
 
 interface StreamingChatProps {
