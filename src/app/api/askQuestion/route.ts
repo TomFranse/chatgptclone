@@ -4,41 +4,36 @@ import { adminDb } from '@/lib/firebase/firebaseAdmin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { ChatCompletionMessageParam } from 'openai/resources/chat';
 
-// Add request caching for repeated prompts
-const cache = new Map();
+// TTL Cache implementation
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 100;
 
 export async function POST(req: Request) {
-  const { prompt, chatId, model, session } = await req.json();
-  
-  // Generate cache key
-  const cacheKey = `${prompt}-${model}`;
-  
-  // Check cache
-  if (cache.has(cacheKey)) {
-    const cachedResponse = cache.get(cacheKey);
-    // Only use cache for very recent requests (last 5 minutes)
-    if (Date.now() - cachedResponse.timestamp < 5 * 60 * 1000) {
-      return NextResponse.json(cachedResponse.data);
-    }
-  }
-
-  if (!prompt) {
-    return NextResponse.json({ error: "Please provide a prompt!" }, { status: 400 });
-  }
-
-  if (!chatId) {
-    return NextResponse.json({ error: "Please provide a valid chat ID!" }, { status: 400 });
-  }
-
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
-
-  if (!userEmail) {
-    return NextResponse.json({ error: "User not authenticated!" }, { status: 401 });
-  }
-
   try {
-    // Get previous messages
+    const { prompt, chatId, model, session } = await req.json();
+    
+    if (!prompt || !chatId) {
+      return NextResponse.json({ 
+        error: !prompt ? "Missing prompt" : "Missing chat ID" 
+      }, { status: 400 });
+    }
+
+    const userEmail = session?.user?.email || 
+      (process.env.NODE_ENV === 'development' ? 'development-user' : null);
+    
+    if (!userEmail) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check cache
+    const cacheKey = `${prompt}-${model}`;
+    const cached = cache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      return NextResponse.json(cached.data);
+    }
+
+    // Get messages from Firebase
     const chatRef = adminDb
       .collection('users')
       .doc(userEmail)
@@ -48,43 +43,34 @@ export async function POST(req: Request) {
 
     const messages = await chatRef.orderBy('createdAt', 'asc').get();
     
-    // Format messages for OpenAI
-    const previousMessages = messages.docs.map(doc => {
-      const data = doc.data();
-      return {
-        role: data.user.name === "ChatGPT" ? "assistant" : "user",
-        content: data.text
-      };
-    });
-
-    // Add current prompt
-    const allMessages = [
-      ...previousMessages,
-      { role: "user", content: prompt }
+    const allMessages: ChatCompletionMessageParam[] = [
+      ...messages.docs.map(doc => ({
+        role: doc.data().user.name === "ChatGPT" ? "assistant" as const : "user" as const,
+        content: doc.data().text
+      })),
+      { role: "user" as const, content: prompt }
     ];
 
     const stream = await openai.chat.completions.create({
       model: model || "gpt-3.5-turbo",
-      messages: allMessages as ChatCompletionMessageParam[],
+      messages: allMessages,
       temperature: 0.9,
       stream: true,
     });
 
-    let fullAssistantResponse = '';
-
+    let fullResponse = '';
     const response = new ReadableStream({
       async start(controller) {
         for await (const chunk of stream) {
           const content = chunk.choices[0]?.delta?.content || '';
           if (content) {
-            fullAssistantResponse += content;
+            fullResponse += content;
             controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ content })}\n\n`));
           }
         }
 
-        // Save the complete message to Firebase
         await chatRef.add({
-          text: fullAssistantResponse,
+          text: fullResponse,
           createdAt: Timestamp.now(),
           user: {
             _id: "ChatGPT",
@@ -93,21 +79,13 @@ export async function POST(req: Request) {
           },
         });
 
+        // Update cache and cleanup if needed
+        cache.set(cacheKey, { data: response, timestamp: Date.now() });
+        if (cache.size > MAX_CACHE_SIZE) cache.delete(Array.from(cache.keys())[0]);
+
         controller.close();
       },
     });
-
-    // Store in cache
-    cache.set(cacheKey, {
-      data: response,
-      timestamp: Date.now()
-    });
-
-    // Cleanup old cache entries
-    if (cache.size > 100) {
-      const oldestKey = Array.from(cache.keys())[0];
-      cache.delete(oldestKey);
-    }
 
     return new Response(response, {
       headers: {
@@ -118,9 +96,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('Error in askQuestion:', error);
-    return NextResponse.json(
-      { error: "An error occurred while processing your request." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
 } 
