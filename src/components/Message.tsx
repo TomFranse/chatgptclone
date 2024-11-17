@@ -3,6 +3,7 @@
 import { DocumentData } from "firebase/firestore";
 import { Box, Paper, Typography, Avatar } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 
 type Props = {
   message: DocumentData;
@@ -11,6 +12,24 @@ type Props = {
 
 function Message({ message, isStreaming }: Props) {
   const isAssistant = message.user.name === "ChatGPT";
+
+  const markdownComponents: Components = {
+    h1: ({ children }) => (
+      <Typography variant="h1">{children}</Typography>
+    ),
+    h2: ({ children }) => (
+      <Typography variant="h2">{children}</Typography>
+    ),
+    h3: ({ children }) => (
+      <Typography variant="h3">{children}</Typography>
+    ),
+    h4: ({ children }) => (
+      <Typography variant="h4">{children}</Typography>
+    ),
+    p: ({ children }) => (
+      <Typography variant="body1">{children}</Typography>
+    ),
+  };
 
   return (
     <Box
@@ -43,7 +62,6 @@ function Message({ message, isStreaming }: Props) {
           borderTopLeftRadius: isAssistant ? 0 : '16px',
           '& p': {
             m: 0,
-            fontFamily: 'inherit',
           },
           '& pre': {
             backgroundColor: isAssistant ? 'background.paper' : 'rgba(255,255,255,0.1)',
@@ -51,7 +69,7 @@ function Message({ message, isStreaming }: Props) {
             borderRadius: 1,
             overflow: 'auto',
             maxWidth: '100%',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontFamily: 'monospace',
             color: isAssistant ? 'text.primary' : 'white',
             my: 2,
           },
@@ -60,7 +78,7 @@ function Message({ message, isStreaming }: Props) {
             px: 1,
             py: 0.5,
             borderRadius: 0.5,
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontFamily: 'monospace',
             color: isAssistant ? 'text.primary' : 'white',
           },
         }}
@@ -73,11 +91,12 @@ function Message({ message, isStreaming }: Props) {
               wordBreak: 'break-word',
               fontSize: '0.9rem',
               lineHeight: 1.5,
-              fontFamily: 'inherit',
             },
           }}
         >
-          <ReactMarkdown>{message.text}</ReactMarkdown>
+          <ReactMarkdown components={markdownComponents}>
+            {message.text}
+          </ReactMarkdown>
         </Typography>
       </Paper>
     </Box>

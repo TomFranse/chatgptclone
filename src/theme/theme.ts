@@ -19,54 +19,37 @@ export const theme = createTheme({
   },
   typography: {
     fontFamily: 'var(--font-montserrat)',
-    fontSize: 14,
-    h1: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 600,
-    },
-    h2: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 600,
-    },
-    h3: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 500,
-    },
-    h4: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 500,
-    },
-    h5: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 500,
-    },
-    h6: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 500,
-    },
     body1: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 400,
+      lineHeight: 1.5,
     },
     body2: {
-      fontFamily: 'var(--font-montserrat)',
-      fontWeight: 400,
+      lineHeight: 1.5,
     },
-    button: {
-      fontFamily: 'var(--font-montserrat)',
+    h1: {
+      fontSize: '2.618rem',
+      fontWeight: 600,
+      lineHeight: 1.5,
+    },
+    h2: {
+      fontSize: '1.618rem',
+      fontWeight: 600,
+      lineHeight: 1.5,
+    },
+    h3: {
+      fontSize: '1.2rem',
       fontWeight: 500,
+      lineHeight: 1.5,
+    },
+    h4: {
+      fontSize: '1rem',
+      fontWeight: 500,
+      lineHeight: 1.5,
     },
   },
   spacing: 8,
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: {
-          fontFamily: 'var(--font-montserrat)',
-        },
-        'pre, code': {
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-        },
         '*': {
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': {
@@ -98,8 +81,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 4,
-          fontWeight: 500,
+          borderRadius: 24,
         }
       }
     },
