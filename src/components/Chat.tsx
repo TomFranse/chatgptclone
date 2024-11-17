@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection, orderBy, query } from "firebase/firestore";
-import { firestore } from "@/src/lib/firebase/firebase";
+import { firestore } from "@/lib/firebase/firebase";
 import { useSession } from "next-auth/react";
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Message from "./Message";

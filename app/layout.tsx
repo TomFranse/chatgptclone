@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
-import Login from "../components/Login";
-import SessionProvider from "../components/SessionProvider";
-import { authOptions } from "../pages/api/auth/[...nextauth]";
+import Login from "@/components/Login";
+import SessionProvider from "@/components/SessionProvider";
+import { authOptions } from "./api/auth/authOptions";
 import Providers from "@/components/Providers";
 import RootLayoutClient from "@/components/RootLayoutClient";
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, Stack } from '@mui/material';
-import Sidebar from "@/components/Sidebar";
-import ClientProvider from "@/components/ClientProvider";
+import Sidebar from "./Sidebar";
+import ClientProvider from "./ClientProvider";
 
 type Props = {
   children: React.ReactNode;

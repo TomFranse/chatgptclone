@@ -5,9 +5,9 @@ import { Box, TextField, IconButton, Paper } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { useSession } from "next-auth/react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { firestore } from "@/src/lib/firebase/firebase";
+import { firestore } from "@/lib/firebase/firebase";
 import toast from "react-hot-toast";
-import ModelSelection from "@/components/ModelSelection";
+import ModelSelection from "./ModelSelection";
 import useSWR from "swr";
 
 type Props = {
@@ -23,6 +23,9 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
     fallbackData: "gpt-3.5-turbo",
   });
 
+  console.log('ChatInput Session:', session);
+  console.log('ChatId:', chatId);
+
   const sendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!prompt) return;
@@ -35,6 +38,9 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
     const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
     if (!userEmail) return;
 
+    console.log('Sending message:', input);
+    console.log('UserEmail:', userEmail);
+
     const message: Message = {
       text: input,
       createdAt: serverTimestamp(),
@@ -46,14 +52,16 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
       },
     };
 
-    await addDoc(
-      collection(firestore, 'users', userEmail, 'chats', chatId, 'messages'),
-      message
-    );
-
-    const notification = toast.loading('ChatGPT is thinking...');
+    let notificationId: string | undefined;
 
     try {
+      await addDoc(
+        collection(firestore, 'users', userEmail, 'chats', chatId, 'messages'),
+        message
+      );
+
+      notificationId = toast.loading('ChatGPT is thinking...');
+
       const response = await fetch('/api/askQuestion', {
         method: 'POST',
         headers: {
@@ -67,10 +75,14 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
         }),
       });
 
-      if (!response.ok) throw new Error(response.statusText);
+      if (!response.ok) {
+        throw new Error(response.statusText || 'Failed to send message');
+      }
 
       const data = response.body;
-      if (!data) return;
+      if (!data) {
+        throw new Error('No response data');
+      }
 
       const reader = data.getReader();
       const decoder = new TextDecoder();
@@ -82,11 +94,10 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
         done = doneReading;
         const chunkValue = decoder.decode(value);
         
-        // Parse the SSE data
         const lines = chunkValue.split('\n');
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = line.slice(6); // Remove 'data: ' prefix
+            const data = line.slice(6);
             if (data === '[DONE]') continue;
             
             try {
@@ -103,13 +114,15 @@ function ChatInput({ chatId, onStreamingUpdate }: Props) {
       }
 
       toast.success('ChatGPT has responded!', {
-        id: notification,
+        id: notificationId,
       });
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Something went wrong. Please try again later.', {
-        id: notification,
-      });
+      if (notificationId) {
+        toast.error(error instanceof Error ? error.message : 'Failed to send message', {
+          id: notificationId,
+        });
+      }
     }
   };
 

@@ -3,9 +3,7 @@
 import React from "react";
 import { Toaster } from "react-hot-toast";
 
-type Props = {};
-
-function ClientProvider({}: Props) {
+function ClientProvider() {
   return (
     <>
       <Toaster position="top-right" />

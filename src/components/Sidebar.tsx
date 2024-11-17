@@ -1,26 +1,35 @@
 "use client";
 
-import { firestore } from "@/src/lib/firebase/firebase";
+import { firestore } from "@/lib/firebase/firebase";
 import { collection, orderBy, query } from "firebase/firestore";
 import { useSession, signOut } from "next-auth/react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { Box, List, ListItem, Button, Divider } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import ChatRow from "@/components/ChatRow";
-import ModelSelection from "@/components/ModelSelection";
-import NewChat from "@/components/NewChat";
+import ChatRow from "./ChatRow";
+import ModelSelection from "./ModelSelection";
+import NewChat from "./NewChat";
 
 function Sidebar() {
   const { data: session } = useSession();
   const isDevelopment = process.env.NODE_ENV === 'development';
   const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
 
+  console.log('Session:', session);
+  console.log('UserEmail:', userEmail);
+
   const [chats, loading, error] = useCollection(
-    userEmail && userEmail.length > 0 ? query(
-      collection(firestore, 'users', userEmail, 'chats'),
-      orderBy('createdAt', 'desc')
-    ) : null
+    userEmail && userEmail.length > 0 ?
+      query(
+        collection(firestore, 'users', userEmail, 'chats'),
+        orderBy('createdAt', 'desc')
+      )
+    : null
   );
+
+  console.log('Chats:', chats?.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+  console.log('Loading:', loading);
+  console.log('Error:', error);
 
   return (
     <Box sx={{ height: '100vh', overflow: 'auto' }}>
@@ -39,7 +48,7 @@ function Sidebar() {
 
         {error && (
           <ListItem>
-            <Box>Error loading chats</Box>
+            <Box>Error loading chats: {error.message}</Box>
           </ListItem>
         )}
 

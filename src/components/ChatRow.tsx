@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { collection, deleteDoc, doc } from "firebase/firestore";
-import { firestore } from "@/src/lib/firebase/firebase";
+import { firestore } from "@/lib/firebase/firebase";
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import DeleteIcon from '@mui/icons-material/Delete';
