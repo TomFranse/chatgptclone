@@ -10,6 +10,13 @@ import ChatRow from "./ChatRow";
 import ModelSelection from "./ModelSelection";
 import NewChat from "./NewChat";
 
+type ChatDocument = {
+  createdAt: any;
+  lastMessage?: string;
+  title?: string;
+  userId: string;
+}
+
 function Sidebar() {
   const { data: session } = useSession();
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -52,9 +59,17 @@ function Sidebar() {
           </ListItem>
         )}
 
-        {chats?.docs.map(chat => (
-          <ChatRow key={chat.id} id={chat.id} />
-        ))}
+        {chats?.docs.map(chat => {
+          const chatData = chat.data() as ChatDocument;
+          return (
+            <ChatRow 
+              key={chat.id} 
+              id={chat.id} 
+              lastMessage={chatData.lastMessage}
+              title={chatData.title}
+            />
+          );
+        })}
       </List>
 
       {session && (

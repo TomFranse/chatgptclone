@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, deleteDoc, doc } from "firebase/firestore";
 import { firestore } from "@/lib/firebase/firebase";
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
@@ -12,21 +10,17 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 type Props = {
   id: string;
+  lastMessage?: string;
+  title?: string;
 };
 
-function ChatRow({ id }: Props) {
+function ChatRow({ id, lastMessage = "New message", title = "New Chat" }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
   const [active, setActive] = useState(false);
   const isDevelopment = process.env.NODE_ENV === 'development';
   const userEmail = session?.user?.email || (isDevelopment ? 'development-user' : null);
-
-  const [messages] = useCollection(
-    userEmail ?
-      collection(firestore, 'users', userEmail, 'chats', id, 'messages')
-      : null
-  );
 
   useEffect(() => {
     if (!pathname) return;
@@ -39,8 +33,7 @@ function ChatRow({ id }: Props) {
     router.replace('/');
   };
 
-  const lastMessage = messages?.docs[messages?.docs.length - 1]?.data().text || "New Chat";
-  const truncatedMessage = lastMessage.length > 30 ? `${lastMessage.substring(0, 30)}...` : lastMessage;
+  const displayText = title || "New Chat";
 
   return (
     <ListItem
@@ -59,7 +52,7 @@ function ChatRow({ id }: Props) {
           <ChatIcon />
         </ListItemIcon>
         <ListItemText 
-          primary={truncatedMessage}
+          primary={displayText}
           sx={{ 
             overflow: 'hidden',
             textOverflow: 'ellipsis',

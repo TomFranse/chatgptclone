@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import openai from '@/utils/chatgpt';
+import openai from '@/lib/openai/chatgpt';
 import { adminDb } from '@/lib/firebase/firebaseAdmin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { ChatCompletionMessageParam } from 'openai/resources/chat';

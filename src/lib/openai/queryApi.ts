@@ -1,5 +1,5 @@
-import openai from "./chatgpt.ts.old";
-import { adminDb } from "@/firebase/firebaseAdmin";
+import openai from "./chatgpt";
+import { adminDb } from "@/lib/firebase/firebaseAdmin";
 
 const query = async (prompt: string, chatId: string, model: string) => {
   try {

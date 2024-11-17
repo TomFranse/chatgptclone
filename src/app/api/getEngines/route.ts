@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import openai from '@/utils/chatgpt';
+import openai from '@/lib/openai/chatgpt';
 
 export async function GET() {
   try {
