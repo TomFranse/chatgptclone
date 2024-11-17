@@ -3,15 +3,16 @@
 import Chat from "@/components/Chat";
 import ChatInput from "@/components/ChatInput";
 import { Box } from '@mui/material';
-import { useState } from "react";
+import { useState, use } from "react";
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
-function ChatPage({ params: { id } }: Props) {
+function ChatPage({ params }: Props) {
+  const { id } = use(params);
   const [streamingContent, setStreamingContent] = useState("");
 
   return (

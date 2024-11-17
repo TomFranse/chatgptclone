@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { collection, orderBy, query, limit } from "firebase/firestore";
+import { collection, orderBy, query, limit, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { firestore } from "@/lib/firebase/firebase";
 import { useSession } from "next-auth/react";
 import { Box, CircularProgress, Typography, Button } from '@mui/material';
@@ -17,6 +17,17 @@ type Props = {
   streamingContent: string;
   onStreamingUpdate: (content: string) => void;
 };
+
+interface MessageData {
+  text: string;
+  createdAt: any;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar: string;
+  };
+}
 
 function Chat({ chatId, streamingContent }: Props) {
   const { data: session } = useSession();
@@ -46,7 +57,7 @@ function Chat({ chatId, streamingContent }: Props) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
 
-  const lastMessage = messages?.docs[messages?.docs.length - 1]?.data();
+  const lastMessage = messages?.docs[messages?.docs.length - 1]?.data() as MessageData | undefined;
   const isLastMessageFromAssistant = lastMessage?.user.name === "ChatGPT";
 
   return (
@@ -58,6 +69,7 @@ function Chat({ chatId, streamingContent }: Props) {
         width: '100%',
         overflow: 'hidden',
         pt: { xs: 8, sm: 3 },
+        bgcolor: 'background.default'
       }}
     >
       <Box sx={{ overflow: 'hidden', position: 'relative' }}>
@@ -95,8 +107,8 @@ function Chat({ chatId, streamingContent }: Props) {
               </Box>
             )}
 
-            {displayMessages?.map((message, index) => {
-              const messageData = message.data();
+            {displayMessages?.map((message: QueryDocumentSnapshot<DocumentData>, index: number) => {
+              const messageData = message.data() as MessageData;
               const isLastChatGPTMessage = 
                 messageData.user.name === "ChatGPT" && 
                 index === displayMessages.length - 1;
@@ -129,7 +141,7 @@ function Chat({ chatId, streamingContent }: Props) {
         </SimpleBar>
       </Box>
 
-      <Box sx={{ p: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <Box sx={{ p: 2 }}>
         {/* Add your chat input component here */}
       </Box>
     </Box>

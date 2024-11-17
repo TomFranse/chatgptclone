@@ -20,11 +20,31 @@ export const AVAILABLE_MODELS: { [key: string]: ModelConfig } = {
       stream: true,
     },
   },
+  'gpt-4-turbo-preview': {
+    id: 'gpt-4-turbo-preview',
+    name: 'GPT-4 Turbo',
+    description: 'Latest GPT-4 model with improved capabilities',
+    contextLength: 128000,
+    defaultParams: {
+      temperature: 0.7,
+      stream: true,
+    },
+  },
   'gpt-3.5-turbo': {
     id: 'gpt-3.5-turbo',
     name: 'GPT-3.5 Turbo',
     description: 'Fast and efficient for most tasks',
     contextLength: 4096,
+    defaultParams: {
+      temperature: 0.7,
+      stream: true,
+    },
+  },
+  'gpt-3.5-turbo-16k': {
+    id: 'gpt-3.5-turbo-16k',
+    name: 'GPT-3.5 Turbo 16K',
+    description: 'Same as standard GPT-3.5 but with 16K context',
+    contextLength: 16384,
     defaultParams: {
       temperature: 0.7,
       stream: true,

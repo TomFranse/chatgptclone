@@ -84,10 +84,23 @@ function ChatInput({ chatId, onStreamingUpdate }: { chatId: string; onStreamingU
   };
 
   return (
-    <Box sx={{ position: 'sticky', bottom: 0, width: '100%' }}>
-      <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.paper' }}>
+    <Box sx={{ 
+      position: 'sticky', 
+      bottom: 0, 
+      width: '100%',
+      bgcolor: 'background.default'
+    }}>
+      <Box sx={{ p: 2 }}>
         <ModelSelection />
-        <Box component="form" onSubmit={sendMessage} sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <Box 
+          component="form" 
+          onSubmit={sendMessage} 
+          sx={{ 
+            display: 'flex', 
+            gap: 2, 
+            mt: 2 
+          }}
+        >
           <TextField
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -98,18 +111,30 @@ function ChatInput({ chatId, onStreamingUpdate }: { chatId: string; onStreamingU
             multiline
             maxRows={5}
             disabled={isLoading}
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+            sx={{ 
+              '& .MuiOutlinedInput-root': { 
+                borderRadius: 3,
+                bgcolor: 'background.default',
+                '& fieldset': {
+                  borderColor: 'rgba(255,255,255,0.1)'
+                }
+              }
+            }}
           />
           <IconButton 
             type="submit" 
             disabled={!prompt.trim() || (!session && process.env.NODE_ENV !== 'development') || isLoading}
             color="primary"
-            sx={{ p: 1 }}
+            sx={{ 
+              p: 1,
+              borderRadius: 3,
+              bgcolor: 'background.default'
+            }}
           >
             <SendIcon />
           </IconButton>
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }

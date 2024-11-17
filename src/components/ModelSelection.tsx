@@ -2,7 +2,7 @@
 
 import React from "react";
 import useSWR from "swr";
-import { DEFAULT_MODEL } from '@/config/modelConfig';
+import { DEFAULT_MODEL, AVAILABLE_MODELS } from '@/config/modelConfig';
 import { FormControl, Select, MenuItem, Box } from '@mui/material';
 
 interface ModelOption {
@@ -15,15 +15,25 @@ interface ModelsData {
 }
 
 const fetchModels = async (): Promise<ModelsData> => {
-  const cached = JSON.parse(localStorage.getItem('openai-models') || '{}');
-  if (cached.data && Date.now() - cached.timestamp < 3600000) {
-    return cached.data;
-  }
+  // Clear existing cache for testing
+  localStorage.removeItem('openai-models');
 
   const data = await fetch("/api/getEngines")
-    .then(res => res.ok ? res.json() : null)
-    .catch(() => null) || { 
-      modelOption: [{ value: DEFAULT_MODEL, label: "GPT-4" }] 
+    .then(res => {
+      if (!res.ok) {
+        console.error('Failed to fetch models:', res.status, res.statusText);
+        return null;
+      }
+      return res.json();
+    })
+    .catch((error) => {
+      console.error('Error fetching models:', error);
+      return null;
+    }) || { 
+      modelOption: Object.entries(AVAILABLE_MODELS).map(([id, config]) => ({
+        value: id,
+        label: config.name
+      }))
     };
 
   localStorage.setItem('openai-models', JSON.stringify({
@@ -36,7 +46,13 @@ const fetchModels = async (): Promise<ModelsData> => {
 
 function ModelSelection() {
   const { data: models } = useSWR<ModelsData>("models", fetchModels, {
-    fallbackData: { modelOption: [{ value: DEFAULT_MODEL, label: "GPT-4" }] }
+    fallbackData: { 
+      modelOption: Object.entries(AVAILABLE_MODELS).map(([id, config]) => ({
+        value: id,
+        label: config.name
+      }))
+    },
+    refreshInterval: 3600000 // Refresh every hour
   });
   
   const { data: model, mutate: setModel } = useSWR<string>("model", {
@@ -45,13 +61,22 @@ function ModelSelection() {
 
   return (
     <Box sx={{ mt: 2 }}>
-      <FormControl fullWidth>
+      <FormControl fullWidth variant="outlined" size="small">
         <Select
           value={model}
           onChange={(e) => setModel(e.target.value)}
           sx={{
-            bgcolor: 'background.paper',
-            '& .MuiSelect-select': { py: 1.5 }
+            borderRadius: 3,
+            bgcolor: 'background.default',
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'rgba(255,255,255,0.1)'
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'rgba(255,255,255,0.2)'
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'primary.main'
+            }
           }}
         >
           {models?.modelOption.map(({ value, label }: ModelOption) => (
