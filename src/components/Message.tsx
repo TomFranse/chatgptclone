@@ -4,6 +4,9 @@ import { DocumentData } from "firebase/firestore";
 import { Box, Paper, Typography, Avatar } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import gfm from 'remark-gfm';
 
 type Props = {
   message: DocumentData;
@@ -29,6 +32,49 @@ function Message({ message, isStreaming }: Props) {
     p: ({ children }) => (
       <Typography variant="body1">{children}</Typography>
     ),
+    // Table components
+    table: ({ children }) => (
+      <Box sx={{ overflowX: 'auto', my: 2 }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>{children}</table>
+      </Box>
+    ),
+    th: ({ children }) => (
+      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f5f5f5' }}>
+        {children}
+      </th>
+    ),
+    td: ({ children }) => (
+      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{children}</td>
+    ),
+    
+    // Strikethrough
+    del: ({ children }) => (
+      <Typography component="del" sx={{ textDecoration: 'line-through' }}>
+        {children}
+      </Typography>
+    ),
+    
+    // Line Break
+    br: () => <br />,
+    
+    // Code blocks with syntax highlighting
+    code: ({ node, inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={oneDark}
+          language={match[1]}
+          PreTag="div"
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      ) : (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    },
   };
 
   return (
@@ -81,6 +127,26 @@ function Message({ message, isStreaming }: Props) {
             fontFamily: 'monospace',
             color: isAssistant ? 'text.primary' : 'white',
           },
+          '& table': {
+            borderCollapse: 'collapse',
+            width: '100%',
+            mb: 2,
+          },
+          '& th, & td': {
+            border: '1px solid',
+            borderColor: isAssistant ? 'grey.300' : 'rgba(255,255,255,0.2)',
+            p: 1,
+          },
+          '& th': {
+            backgroundColor: isAssistant ? 'grey.200' : 'rgba(255,255,255,0.1)',
+          },
+          // Add support for horizontal rules
+          '& hr': {
+            border: 'none',
+            borderTop: '1px solid',
+            borderColor: isAssistant ? 'grey.300' : 'rgba(255,255,255,0.2)',
+            my: 2,
+          },
         }}
       >
         <Typography
@@ -94,7 +160,10 @@ function Message({ message, isStreaming }: Props) {
             },
           }}
         >
-          <ReactMarkdown components={markdownComponents}>
+          <ReactMarkdown
+            remarkPlugins={[gfm]}
+            components={markdownComponents}
+          >
             {message.text}
           </ReactMarkdown>
         </Typography>
