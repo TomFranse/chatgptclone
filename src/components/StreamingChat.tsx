@@ -41,11 +41,12 @@ export const StreamingChat = React.memo(({ chatId, initialContent, apiConfig }: 
           setIsStreaming(false);
         }
       );
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Streaming error:', error);
-      if (error instanceof Error) {
-        setContent(prev => `${prev}\nError: ${error.message}`);
-      }
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'An unexpected error occurred';
+      setContent(prev => `${prev}\nError: ${errorMessage}`);
     } finally {
       console.log('Stream ended');
       setIsStreaming(false);

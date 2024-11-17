@@ -6,10 +6,29 @@ import { DEFAULT_MODEL } from '@/config/modelConfig';
 import { FormControl, Select, MenuItem, CircularProgress, Box } from '@mui/material';
 
 const fetchModels = async () => {
+  const cacheKey = 'openai-models';
+  const cachedModels = localStorage.getItem(cacheKey);
+  
+  if (cachedModels) {
+    const { data, timestamp } = JSON.parse(cachedModels);
+    // Use cache if less than 1 hour old
+    if (Date.now() - timestamp < 60 * 60 * 1000) {
+      return data;
+    }
+  }
+
   try {
     const res = await fetch("/api/getEngines");
     if (!res.ok) throw new Error('Failed to fetch models');
-    return res.json();
+    const data = await res.json();
+    
+    // Cache the result
+    localStorage.setItem(cacheKey, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+    
+    return data;
   } catch (error) {
     return { modelOption: [{ value: DEFAULT_MODEL, label: "GPT-4" }] };
   }

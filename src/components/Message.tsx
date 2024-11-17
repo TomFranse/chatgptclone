@@ -2,13 +2,14 @@
 
 import { DocumentData } from "firebase/firestore";
 import { Paper, Box, Avatar, Typography } from '@mui/material';
+import { memo } from 'react';
 
 type Props = {
   message: DocumentData;
   isStreaming?: boolean;
 };
 
-function Message({ message, isStreaming }: Props) {
+const Message = memo(function Message({ message, isStreaming }: Props) {
   const isChatGPT = message.user.name === "ChatGPT";
 
   // Function to format the message text
@@ -69,6 +70,9 @@ function Message({ message, isStreaming }: Props) {
       </Box>
     </Paper>
   );
-}
+});
 
-export default Message;
+export default memo(Message, (prevProps, nextProps) => {
+  return prevProps.message.text === nextProps.message.text && 
+         prevProps.isStreaming === nextProps.isStreaming;
+});

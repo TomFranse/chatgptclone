@@ -2,9 +2,25 @@ import { NextResponse } from 'next/server';
 import openai from '@/utils/chatgpt';
 import { adminDb } from '@/lib/firebase/firebaseAdmin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { ChatCompletionMessageParam } from 'openai/resources/chat';
+
+// Add request caching for repeated prompts
+const cache = new Map();
 
 export async function POST(req: Request) {
   const { prompt, chatId, model, session } = await req.json();
+  
+  // Generate cache key
+  const cacheKey = `${prompt}-${model}`;
+  
+  // Check cache
+  if (cache.has(cacheKey)) {
+    const cachedResponse = cache.get(cacheKey);
+    // Only use cache for very recent requests (last 5 minutes)
+    if (Date.now() - cachedResponse.timestamp < 5 * 60 * 1000) {
+      return NextResponse.json(cachedResponse.data);
+    }
+  }
 
   if (!prompt) {
     return NextResponse.json({ error: "Please provide a prompt!" }, { status: 400 });
@@ -49,7 +65,7 @@ export async function POST(req: Request) {
 
     const stream = await openai.chat.completions.create({
       model: model || "gpt-3.5-turbo",
-      messages: allMessages,
+      messages: allMessages as ChatCompletionMessageParam[],
       temperature: 0.9,
       stream: true,
     });
@@ -80,6 +96,18 @@ export async function POST(req: Request) {
         controller.close();
       },
     });
+
+    // Store in cache
+    cache.set(cacheKey, {
+      data: response,
+      timestamp: Date.now()
+    });
+
+    // Cleanup old cache entries
+    if (cache.size > 100) {
+      const oldestKey = Array.from(cache.keys())[0];
+      cache.delete(oldestKey);
+    }
 
     return new Response(response, {
       headers: {

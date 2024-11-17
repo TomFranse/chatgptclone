@@ -44,5 +44,19 @@ export const useStreamManager = () => {
     };
   }, []);
 
+  // Add cleanup for abandoned streams
+  useEffect(() => {
+    const cleanup = () => {
+      streamManagerRef.current.activeStreams.forEach((controller, chatId) => {
+        controller.abort();
+      });
+      streamManagerRef.current.activeStreams.clear();
+      streamManagerRef.current.isStreaming.clear();
+    };
+
+    window.addEventListener('beforeunload', cleanup);
+    return () => window.removeEventListener('beforeunload', cleanup);
+  }, []);
+
   return { startStream, stopStream };
 }; 
