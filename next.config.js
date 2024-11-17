@@ -4,11 +4,6 @@ const nextConfig = {
   images: {
     domains: ["drive.google.com"],
   },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
 };
 
 module.exports = nextConfig;
