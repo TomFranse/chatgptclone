@@ -1,60 +1,87 @@
 "use client";
 
 import { DocumentData } from "firebase/firestore";
-import { Paper, Box, Avatar, Typography } from '@mui/material';
-import { memo } from 'react';
+import { Box, Paper, Typography, Avatar } from '@mui/material';
+import ReactMarkdown from 'react-markdown';
 
-type MessageProps = {
-  message: DocumentData & {
-    text: string;
-    user: {
-      name: string;
-      avatar: string;
-    }
-  };
+type Props = {
+  message: DocumentData;
   isStreaming?: boolean;
 };
 
-const Message = memo(({ message, isStreaming }: MessageProps) => {
-  const isChatGPT = message.user.name === "ChatGPT";
+function Message({ message, isStreaming }: Props) {
+  const isAssistant = message.user.name === "ChatGPT";
 
   return (
-    <Paper 
-      elevation={0}
-      square
+    <Box
       sx={{
-        py: 2.5,
-        minHeight: '3.5rem',
-        bgcolor: isChatGPT ? 'action.hover' : 'background.default',
-        whiteSpace: 'pre-wrap'
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 2,
+        p: 1.5,
+        flexDirection: isAssistant ? 'row' : 'row-reverse',
       }}
     >
-      <Box sx={{ display: 'flex', gap: 2.5, px: 5, maxWidth: '2xl', mx: 'auto' }}>
-        <Avatar
-          src={message.user.avatar}
-          alt={message.user.name}
-          sx={{ width: 32, height: 32 }}
-        />
-        <Typography 
+      <Avatar
+        src={message.user.avatar}
+        alt={message.user.name}
+        sx={{ 
+          width: 32, 
+          height: 32,
+          order: isAssistant ? 0 : 1 
+        }}
+      />
+      
+      <Paper
+        elevation={0}
+        sx={{
+          maxWidth: '75%',
+          p: 3,
+          backgroundColor: isAssistant ? 'grey.100' : 'primary.main',
+          color: isAssistant ? '#000000' : 'white',
+          borderRadius: '16px',
+          borderTopLeftRadius: isAssistant ? 0 : '16px',
+          '& p': {
+            m: 0,
+            fontFamily: 'inherit',
+          },
+          '& pre': {
+            backgroundColor: isAssistant ? 'background.paper' : 'rgba(255,255,255,0.1)',
+            p: 2,
+            borderRadius: 1,
+            overflow: 'auto',
+            maxWidth: '100%',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            color: isAssistant ? 'text.primary' : 'white',
+            my: 2,
+          },
+          '& code': {
+            backgroundColor: isAssistant ? 'background.paper' : 'rgba(255,255,255,0.1)',
+            px: 1,
+            py: 0.5,
+            borderRadius: 0.5,
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            color: isAssistant ? 'text.primary' : 'white',
+          },
+        }}
+      >
+        <Typography
           component="div"
           sx={{
-            pt: 0.5,
-            fontSize: '0.875rem',
-            fontFamily: isChatGPT ? 'monospace' : 'inherit',
-            '& code': {
-              bgcolor: 'action.hover',
-              p: '2px 4px',
-              borderRadius: 1,
-            }
+            opacity: isStreaming ? 0.7 : 1,
+            '& > *': { 
+              wordBreak: 'break-word',
+              fontSize: '0.9rem',
+              lineHeight: 1.5,
+              fontFamily: 'inherit',
+            },
           }}
         >
-          {isChatGPT ? message.text.split('\n').map((line, i) => (
-            <span key={i}>{line}<br /></span>
-          )) : message.text}
+          <ReactMarkdown>{message.text}</ReactMarkdown>
         </Typography>
-      </Box>
-    </Paper>
+      </Paper>
+    </Box>
   );
-}, (prev, next) => prev.message.text === next.message.text && prev.isStreaming === next.isStreaming);
+}
 
 export default Message;

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { firestore } from "@/lib/firebase/firebase";
+import { collection, orderBy, query, deleteDoc, doc } from "firebase/firestore";
+import { useCollection } from "react-firebase-hooks/firestore";
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -35,6 +37,20 @@ function ChatRow({ id, lastMessage = "New message", title = "New Chat" }: Props)
 
   const displayText = title || "New Chat";
 
+  const [messages] = useCollection(
+    userEmail ? 
+      query(
+        collection(firestore, 'users', userEmail, 'chats', id, 'messages'),
+        orderBy('createdAt', 'desc')
+      )
+    : null
+  );
+
+  const lastMessageText = messages?.docs[0]?.data()?.text || lastMessage;
+  const truncatedMessage = lastMessageText.length > 30 
+    ? `${lastMessageText.substring(0, 30)}...` 
+    : lastMessageText;
+
   return (
     <ListItem
       disablePadding
@@ -53,6 +69,7 @@ function ChatRow({ id, lastMessage = "New message", title = "New Chat" }: Props)
         </ListItemIcon>
         <ListItemText 
           primary={displayText}
+          secondary={truncatedMessage}
           sx={{ 
             overflow: 'hidden',
             textOverflow: 'ellipsis',

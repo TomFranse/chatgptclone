@@ -9,6 +9,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatRow from "./ChatRow";
 import ModelSelection from "./ModelSelection";
 import NewChat from "./NewChat";
+import SimpleBar from 'simplebar-react';
+import 'simplebar-react/dist/simplebar.min.css';
 
 type ChatDocument = {
   createdAt: any;
@@ -39,41 +41,53 @@ function Sidebar() {
   console.log('Error:', error);
 
   return (
-    <Box sx={{ height: '100vh', overflow: 'auto' }}>
+    <Box sx={{ 
+      height: '100vh',
+      display: 'grid',
+      gridTemplateRows: 'auto 1fr auto',
+      overflow: 'hidden'
+    }}>
+      {/* Header */}
       <Box sx={{ p: 2 }}>
         <NewChat />
         <Divider sx={{ my: 2 }} />
         <ModelSelection />
       </Box>
 
-      <List sx={{ px: 2, mt: 2 }}>
-        {loading && (
-          <ListItem>
-            <Box>Loading Chats...</Box>
-          </ListItem>
-        )}
+      {/* Scrollable area */}
+      <Box sx={{ overflow: 'hidden' }}>
+        <SimpleBar style={{ height: '100%' }}>
+          <List sx={{ px: 2 }}>
+            {loading && (
+              <ListItem>
+                <Box>Loading Chats...</Box>
+              </ListItem>
+            )}
 
-        {error && (
-          <ListItem>
-            <Box>Error loading chats: {error.message}</Box>
-          </ListItem>
-        )}
+            {error && (
+              <ListItem>
+                <Box>Error loading chats: {error.message}</Box>
+              </ListItem>
+            )}
 
-        {chats?.docs.map(chat => {
-          const chatData = chat.data() as ChatDocument;
-          return (
-            <ChatRow 
-              key={chat.id} 
-              id={chat.id} 
-              lastMessage={chatData.lastMessage}
-              title={chatData.title}
-            />
-          );
-        })}
-      </List>
+            {chats?.docs.map(chat => {
+              const chatData = chat.data() as ChatDocument;
+              return (
+                <ChatRow 
+                  key={chat.id} 
+                  id={chat.id} 
+                  lastMessage={chatData.lastMessage}
+                  title={chatData.title}
+                />
+              );
+            })}
+          </List>
+        </SimpleBar>
+      </Box>
 
-      {session && (
-        <Box sx={{ p: 2, mt: 'auto' }}>
+      {/* Footer */}
+      <Box sx={{ p: 2 }}>
+        {session && (
           <Button
             onClick={() => signOut()}
             fullWidth
@@ -82,8 +96,8 @@ function Sidebar() {
           >
             Log out
           </Button>
-        </Box>
-      )}
+        )}
+      </Box>
     </Box>
   );
 }
